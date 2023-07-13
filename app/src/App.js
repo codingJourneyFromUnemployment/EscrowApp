@@ -1,21 +1,17 @@
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
-import deploy from './deploy';
 import Escrow from './Escrow';
 import axios from 'axios';
+import newContract from './contractService';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-export async function approve(escrowContract, signer) {
-  const approveTxn = await escrowContract.connect(signer).approve();
-  await approveTxn.wait();
-}
 
 function App() {
   const [escrows, setEscrows] = useState([]);
   const [account, setAccount] = useState();
   const [signer, setSigner] = useState();
   const [network, setNetwork] = useState();
+  const [existingContracts, setExistingContracts] = useState([]);
 
   useEffect(() => {
     async function getAccounts() {
@@ -29,44 +25,23 @@ function App() {
     getAccounts();
   }, [account]);
 
-  async function newContract() {
+  useEffect(() => {
+    async function getExistingContracts() {
+      const res = await axios.get('http://localhost:5000/api');
+      console.log(res.data);
+      setExistingContracts(res.data);
+    }
+
+    getExistingContracts();
+  }, []);
+
+  async function createNewContract() {
     const beneficiary = document.getElementById('beneficiary').value;
     const arbiter = document.getElementById('arbiter').value;
     const value = document.getElementById('eth').value;
-    const escrowContract = await deploy(signer, arbiter, beneficiary, value);
-    const contractAddress = escrowContract.address;
-    const depositor = account;
-    const networkName = network.name;
-    const amount = Number(value);
-    const payLoad = {
-      contractAddress,
-      depositor,
-      beneficiary,
-      arbiter,
-      amount,
-      network: networkName,
-    }
-    const res = await axios.post('/api', payLoad);
-    console.log(res.data);
 
-    const escrow = {
-      address: escrowContract.address,
-      arbiter,
-      beneficiary,
-      value: value.toString(),
-      handleApprove: async () => {
-        escrowContract.on('Approved', () => {
-          document.getElementById(escrowContract.address).className =
-            'complete';
-          document.getElementById(escrowContract.address).innerText =
-            "✓ It's been approved!";
-        });
-
-        await approve(escrowContract, signer);
-      },
-    };
-
-    setEscrows([...escrows, escrow]);
+    const newEscrow = await newContract(arbiter, beneficiary, value);
+    setEscrows([...escrows, newEscrow]);
   }
 
   return (
@@ -94,7 +69,7 @@ function App() {
           onClick={(e) => {
             e.preventDefault();
 
-            newContract();
+            createNewContract();
           }}
         >
           Deploy
