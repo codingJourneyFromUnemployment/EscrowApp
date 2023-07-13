@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import deploy from './deploy';
 import Escrow from './Escrow';
+import axios from 'axios';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -14,6 +15,7 @@ function App() {
   const [escrows, setEscrows] = useState([]);
   const [account, setAccount] = useState();
   const [signer, setSigner] = useState();
+  const [network, setNetwork] = useState();
 
   useEffect(() => {
     async function getAccounts() {
@@ -21,6 +23,7 @@ function App() {
 
       setAccount(accounts[0]);
       setSigner(provider.getSigner());
+      setNetwork(await provider.getNetwork());
     }
 
     getAccounts();
@@ -31,7 +34,20 @@ function App() {
     const arbiter = document.getElementById('arbiter').value;
     const value = document.getElementById('eth').value;
     const escrowContract = await deploy(signer, arbiter, beneficiary, value);
-
+    const contractAddress = escrowContract.address;
+    const depositor = account;
+    const networkName = network.name;
+    const amount = Number(value);
+    const payLoad = {
+      contractAddress,
+      depositor,
+      beneficiary,
+      arbiter,
+      amount,
+      network: networkName,
+    }
+    const res = await axios.post('/api', payLoad);
+    console.log(res.data);
 
     const escrow = {
       address: escrowContract.address,
