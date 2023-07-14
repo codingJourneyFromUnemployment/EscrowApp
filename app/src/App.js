@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import Escrow from './Escrow';
 import axios from 'axios';
-import newContract from './contractService';
+import { newContract, rebuildContract, approve } from './contractService';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -11,7 +11,6 @@ function App() {
   const [account, setAccount] = useState();
   const [signer, setSigner] = useState();
   const [network, setNetwork] = useState();
-  const [existingContracts, setExistingContracts] = useState([]);
 
   useEffect(() => {
     async function getAccounts() {
@@ -29,11 +28,31 @@ function App() {
     async function getExistingContracts() {
       const res = await axios.get('http://localhost:5000/api');
       console.log(res.data);
-      setExistingContracts(res.data);
+      
+      const contracts = res.data.map(async (contractData) => {
+        return {
+          address: contractData.contractAddress,
+          arbiter: contractData.arbiter,
+          beneficiary: contractData.beneficiary,
+          value: contractData.amount,
+          handleApprove: async () => {
+            const escrowContract = await rebuildContract(contractData.contractAddress);
+            escrowContract.on('Approved', () => {
+              document.getElementById(contractData.contractAddress).className = 'complete';
+              document.getElementById(contractData.contractAddress).innerText = "✓ It's been approved!";
+            });
+            await approve(escrowContract, signer);
+          },
+        };
+      });
+
+      const contractsArray = await Promise.all(contracts);
+
+      setEscrows(contractsArray);
     }
 
     getExistingContracts();
-  }, []);
+  }, [signer]);
 
   async function createNewContract() {
     const beneficiary = document.getElementById('beneficiary').value;

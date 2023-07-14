@@ -1,6 +1,7 @@
 import deploy from './deploy';
 import { ethers } from 'ethers';
 import axios from 'axios'
+import Escrow from './artifacts/contracts/Escrow.sol/Escrow.json';
 
 async function approve(escrowContract, signer) {
     const approveTxn = await escrowContract.connect(signer).approve();
@@ -44,4 +45,10 @@ async function newContract(arbiter, beneficiary, value) {
     };
 }
 
-export default newContract;
+async function rebuildContract(contractAddress) {
+  const signer = provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, Escrow.abi, signer);
+  return contract;
+}
+
+export { newContract, rebuildContract , approve};
