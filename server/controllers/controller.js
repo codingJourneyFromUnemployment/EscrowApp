@@ -53,6 +53,7 @@ const createEscrowContract = asyncHandler(async (req, res) => {
         arbiter: req.body.arbiter,
         amount: req.body.amount,
         network: req.body.network,
+        beenApproved: req.body.beenApproved,
         createdAt
     });
     await escrowcontract.save();
@@ -63,4 +64,28 @@ const createEscrowContract = asyncHandler(async (req, res) => {
     console.log(`Escrow contract created: ${escrowcontract.contractAddress}`)
 });
 
-module.exports = { getEscrowContracts, getEscrowContract, createEscrowContract };
+
+//@desc Put escrow contract
+//@route Put /api
+//@access Public
+const putEscrowContract = asyncHandler(async (req, res) => {
+    const contractPut = await escrowContract.findOne({contractAddress:req.body.contractAddress});
+    if (!contractPut) {
+        res.status(400).json({
+            success: false,
+            message: 'Contract not found'
+        })
+        console.log(`Contract not found: ${req.body.contractAddress}`)
+        return
+    } else {
+        contractPut.beenApproved = req.body.beenApproved
+        await contractPut.save();
+        res.status(201).json({
+            contractAddress: contractPut.contractAddress,
+            success: true,
+        })
+        console.log(`Escrow contract approved: ${contractPut.contractAddress}`)
+    }
+});
+
+module.exports = { getEscrowContracts, getEscrowContract, createEscrowContract, putEscrowContract };

@@ -24,6 +24,7 @@ async function newContract(arbiter, beneficiary, value) {
         arbiter,
         amount,
         network: networkName,
+        beenApproved: false,
     };
     await axios.post('http://localhost:5000/api', payLoad);
 
@@ -32,8 +33,18 @@ async function newContract(arbiter, beneficiary, value) {
           document.getElementById(contractAddress).className = 'complete';
           document.getElementById(contractAddress).innerText = "✓ It's been approved!";
         });
-    
-        await approve(escrowContract, signer);
+        try {
+          const payLoad = {
+            contractAddress,
+            beenApproved: true,
+          };
+          const res = await axios.put('http://localhost:5000/api', payLoad);
+          console.log(`contract ${contractAddress} has been approved`);
+          console.log(res.data);
+          await approve(escrowContract, signer);
+        } catch (err) {
+          console.log(err);
+        }
       };
 
     return {
@@ -41,6 +52,7 @@ async function newContract(arbiter, beneficiary, value) {
         arbiter,
         beneficiary,
         value: amount.toString(),
+        beenApproved: false,
         handleApprove,
     };
 }

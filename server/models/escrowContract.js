@@ -24,6 +24,10 @@ const escrowContractSchema = mongoose.Schema({
         type: String,
         required: true,
     },
+    beenApproved: {
+        type: Boolean,
+        required: true,
+    },
     createdAt: {
         type: Date,
         required: true,

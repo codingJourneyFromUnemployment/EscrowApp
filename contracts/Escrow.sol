@@ -20,7 +20,7 @@ contract Escrow {
 		require(msg.sender == arbiter);
 		uint balance = address(this).balance;
 		(bool sent, ) = payable(beneficiary).call{value: balance}("");
- 		require(sent, "Failed to send Ether");
+		require(sent, "Failed to send Ether");
 		emit Approved(balance);
 		isApproved = true;
 	}

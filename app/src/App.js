@@ -10,7 +10,6 @@ function App() {
   const [escrows, setEscrows] = useState([]);
   const [account, setAccount] = useState();
   const [signer, setSigner] = useState();
-  const [network, setNetwork] = useState();
 
   useEffect(() => {
     async function getAccounts() {
@@ -18,7 +17,6 @@ function App() {
 
       setAccount(accounts[0]);
       setSigner(provider.getSigner());
-      setNetwork(await provider.getNetwork());
     }
 
     getAccounts();
@@ -35,13 +33,26 @@ function App() {
           arbiter: contractData.arbiter,
           beneficiary: contractData.beneficiary,
           value: contractData.amount,
+          beenApproved: contractData.beenApproved,
+
           handleApprove: async () => {
             const escrowContract = await rebuildContract(contractData.contractAddress);
             escrowContract.on('Approved', () => {
               document.getElementById(contractData.contractAddress).className = 'complete';
               document.getElementById(contractData.contractAddress).innerText = "✓ It's been approved!";
             });
-            await approve(escrowContract, signer);
+            try {
+              const payLoad = {
+                contractAddress: contractData.contractAddress,
+                beenApproved: true,
+              };
+              const res = await axios.put('http://localhost:5000/api', payLoad);
+              console.log(`contract ${contractData.contractAddress} has been approved`);
+              console.log(res.data);
+              await approve(escrowContract, signer);
+            } catch (err) {
+              console.log(err);
+            }
           },
         };
       });
